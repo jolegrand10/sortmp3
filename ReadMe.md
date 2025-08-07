@@ -17,6 +17,14 @@ This is done by fn2at, a script that expects 2 parameters, the input and the out
 The repo structure is
 Music - Artist - Album | Single - Title
 
+## Move single tunes
+The mvsingle.py script moves an isolated music file, knowing its title and the artist, but possibly missing the info about the album to the right place in the  Music hierarchy.
+
+## Move full album
+The mvalbum.py script moves a full album its right place in the music hierarchy.
+
+An album in general is made of a folder with an explicit artist and album title in the name of the folder and rank + tune titles in its content.
+
 
 
 

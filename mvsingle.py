@@ -1,5 +1,5 @@
-""" This is Module fn2at.py for FileName To Artist Title
-    Infers MP3 tags from the filename without overwriting existing data
+""" This is Module mvsingle.py for Move Single
+    Introduces a single music file in the  Music hierarchy
 """
 
 import sys
