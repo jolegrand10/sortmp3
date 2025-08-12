@@ -1,5 +1,13 @@
 """ This is Module fn2at.py for FileName To Artist Title
-    Infers MP3 tags from the filename without overwriting existing data
+    Infers the missing MP3 tags from the filename without overwriting existing data
+    Modifies the files in the input folder and moves them in a flat structure to the output folder.
+    Takes special cares of the Genre Tag because aberrant values do crash EyeD3. Fortunately, another 
+    MP3 lib -Mutagen- can be used to recover the file and insert a viable default genre value.
+    This is convenient for unrelated tunes originating from a playslist, picked from various albums. 
+    The Album Tag may be present or not. It is not processed in any manner whatsoever.
+    Filenames written in the output folder are standardised: white spaces are stripped and their syntax is
+    Artist - Title.mp3
+    For the time being m4a files are not taken into account. TODO.
 """
 
 import sys

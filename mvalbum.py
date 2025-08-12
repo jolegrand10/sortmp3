@@ -1,5 +1,7 @@
 """ This is Module mvalbum.py.py for MoveAlbum
-    Introduces the Album in the music hierarchy
+    Introduces the Album in the music hierarchy.
+    An Album is represented by a sub-folder in the input folder.
+    The sub-folder name is supposed to follow the Artist - Album pattern
 """
 
 import sys

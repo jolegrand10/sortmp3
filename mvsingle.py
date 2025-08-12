@@ -1,5 +1,9 @@
 """ This is Module mvsingle.py for Move Single
-    Introduces a single music file in the  Music hierarchy
+    Introduces a single music file in the  Music hierarchy.
+    Supposes that the filename is Artist - Title.mp3
+    TODO m4a
+    Takes into account the Album Tag if defined.
+    If Album Tag is not defined, then Single is used as a defaut.
 """
 
 import sys
