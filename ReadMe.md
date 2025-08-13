@@ -1,24 +1,41 @@
 # SortMP3 #
 
-This is a set of Python scripts using EyeD3.
+This is a Python script based on Mutagen to sort and store MP3 and M4A music files
 
-## Infer Artist and Title fields
+# Usage
+```
+usage: cmdfix.py [-h] [-i INFOLDER] [-o OUTFOLDER] [--artist ARTIST] [--album ALBUM] [--title TITLE] [-v] [-d] [--dry_run]
 
-When the filenames matches the pattern Artist - Title
-and their type is .mp3,
-provided that there are no conflicts with existing tags, ie, the corresponding tags are empty
-add the Artist and Title Tags with the values found in the filename
+Fix Music File looks for music files in the infolder and transfers them to the outfolder. Each file is located in the Music
+Hierarchy. Music / Artist / Album / Title according to its TAGs. Missing tags are adjusted with information found in filenames.     
+Priority is given to Tag or File to settle conflicting info for artist, title, album.
 
-EyeD3 and Mutagen librairies are both used. 
-EyeD3 fails when the Genre Tag has a forbidden value. 
-Mutagen is then used to fix this value to a default value. 
-"Other" is used as the default value for the Genre Tag.
+options:
+  -h, --help            show this help message and exit
+  -i INFOLDER, --infolder INFOLDER
+                        Input folder. Default is current folder.
+  -o OUTFOLDER, --outfolder OUTFOLDER
+                        Output folder. Default is current folder.
+  --artist ARTIST       Specify File or Tag
+  --album ALBUM         Specify File or Tag
+  --title TITLE         Specify File or Tag
+  -v, --verbose         Show info messages in log
+  -d, --debug           Show debugging details
+  --dry_run             Show file moves but leave music files unchanged
+```
 
-This is done by fn2at, a script that expects 2 parameters, the input and the output folders.
+# Features
 
-Files remaining in the input folder are not viable or do need to be fixed manually.
-(Usually their name needs to be corrected to obey strictly the syntax
-Artist - Title.mp3)
+## Infer Artist and Title fields from the filename
+
+Provided that the syntax of the filename is stricty
+`Artist - Title.mp3` or `m4a`
+
+## Infer the Album name for the folder name
+If the music file lies in a folder with a meaningful name, this name is taken as a candidate for the Album name
+
+"Meaningful" means a name created specifically to host a bunch of music files under the input folder. The name of the global input folder itself is not considered meaningful.
+
 
 ## Music Hierarchy
 
@@ -27,34 +44,76 @@ The next level is one folder per Artist.
 If -for some reason- this piece of info is lacking, "Unknown artist" is used as a default value.
 The level after, is one folder per Album.
 When Album info is missing "Single" is used as a default value.
-The next level is that of music files:  Artist - Title.mp3 is the preferred syntax.
-Track numbers or Album name in the filename are not processed so far (Maybe TODO)
+The next level is that of music files:  Artist - Title.mp3 is the preferred and expected syntax.
 
-## Move single tunes
-The mvsingle.py script moves an isolated music file, knowing its title and the artist, but possibly missing the info about the album to the right place in the  Music hierarchy.
-Album information is inferred from Tag Album in ht MP3 header. If missing, then "Single" is used as a default album name.
-m4a files are not processed for the time being (TODO)
 
-## Move full album
-The mvalbum.py script moves a full album its right place in the music hierarchy.
+## File info versus MP3 or M4A tags
+Information inferred from the file path and information originating from the TAGS included in the Music File Header are merged according to user defined priorities.
 
-An album in general is made of a folder with an explicit artist and album title in the name of the folder and optional rank + tune titles in its content.
+A priority can by either "File" or "Tag".
 
-## FixMusicFile
+Priorities are applied to the Artist, Album, Title attributes.
 
-This scripts takes two arguments. The first one is a folder where unsorted music files are found, the second one is the folder where the Music/Artist/Album hierarchy lives.
+Default priority is to "Tag".
 
-All the files in the input folder are analysed. 
+This means that if a non empty Tag is available, it is preferred to an element extracted from the filepath and a default value will be used in case both have failed.
 
-If a music file is recognized, then its place is determined in the Music Hierarchy.
+If File is chosen as a priority, the same thing happens but File info is used first if available and Tag is tried next. In case both are vacant, a default value is used.
+
+Priorities may be defined independently for Artist, Album and Title.
+
+## Fixing a tune
+
+"Fixing a tune" means moving a music file from the input folder to a Music hierarchy in the output folder.
+
+The tune is moved to an Artist/Album/Title location, under the Music folder in the output folder.
+
+In addition, the TAGs in the header are set consistently with the retained info for Artist/Album/Title.
+
+## Default information
+
+In case info is missing in both file/tags, default values are introduced:
+`Single`for a missing album name, `Unknown artist`for a missing artist name.
+`Unknown title`is the default for a missing title.
+
+## Name standardization
+
+Names (Artists, Album, Titles) are stripped from leading and trailing spaces. In addition they are converted to a mix of uppercase and lowercase so that each word starts with an uppercase letter.
+
+
+## Name sanitization
+
+Characters that do not fit in filenames like "*" or ":" are substituted by spaces.
+
+## Dry run
+
+`dry_run=True` is the default. This means that when the fix command runs without further details the proposed file moves will be shown but not executed.
+
+To actually move the files and modify their tags in their headers, `dry_run=False` must be used.
+
+
 Priority is given to the existing MP3 tags for Artist/Album/Title.
 Should any of those pieces of information be missing, it will be replaced by info found in the file path.
 Artist will be supplied by the folder name.
 Title will be extracted from the file name.
 
-## FixMusicFolder
+# Software
 
-TODO NEXT
+## cmdfix.py
+Provides the CLI interface. Collects the args from the command line and passes them to the fix.py script.
+Args such as verbose and debug drive the behavior of the logging facility.
 
+## fix.py
+This is the home of the FixMusicFile class.
+
+
+# Tests
+
+
+# TODOs
+
+- Use absolute paths for in- out- folders : os.path.abspath('.'))
+- Provide a defaut for absent title
+- Process track numbers or Album names in the filename 
 
 

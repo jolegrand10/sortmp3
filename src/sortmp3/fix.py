@@ -148,7 +148,7 @@ class FixMusicFile():
 
 
 def main():
-    from fullog import Full_Log
+    from src.sortmp3.fullog import Full_Log
     Full_Log("FixMusicFile", debug=True, verbose=False,)
     infolder = sys.argv[1] if len(sys.argv) > 1 else '.'
     outfolder = sys.argv[2] if len(sys.argv) > 2 else '.'

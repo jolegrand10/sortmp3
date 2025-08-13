@@ -1,14 +1,13 @@
+""" Script cmdfix.py - CLI interface for FixMusicFile """
 import argparse
-from fullog import Full_Log
+from sortmp3.fullog import Full_Log
 import logging
-from fixmusfil import FixMusicFile  
+from sortmp3.fix import FixMusicFile
 
 DEBUG = True
 
-
 class CmdFix:
-    """ a command to run FixMusicFile from the CLI"""
-
+    """ a command to run FixMusicFile from the  """
     def __init__(self, p):
         """ p is the parser, provided at init time to facilitate unit testing"""
         self.parser = p
@@ -34,28 +33,27 @@ class CmdFix:
     def setup_parser(self):
         """ add args to parser p"""
         self.parser.add_argument('-i', '--infolder', dest='infolder',
-                            help='Input folder.  Default is current folder.',
-                            default=".")
+                                 help='Input folder.  Default is current folder.',
+                                 default=".")
         self.parser.add_argument('-o', '--outfolder', dest='outfolder',
-                    help='Output folder. Default is current folder.',
-                    default=".")
-        
+                                 help='Output folder. Default is current folder.',
+                                 default=".")
+
         self.parser.add_argument('--artist', help='Specify File or Tag',
                                  type=lambda x: self.is_valid_priority(x),
                                  default="Tag")
         self.parser.add_argument('--album', help='Specify File or Tag',
-                            type=lambda x: self.is_valid_priority(x),
-                            default="Tag")
+                                 type=lambda x: self.is_valid_priority(x),
+                                 default="Tag")
         self.parser.add_argument('--title', help='Specify File or Tag',
-                    type=lambda x: self.is_valid_priority(x),
-                    default="Tag")
+                                 type=lambda x: self.is_valid_priority(x),
+                                 default="Tag")
         self.parser.add_argument('-v', '--verbose', help='Show info messages in log',
-                            action='store_true', default=False)
+                                 action='store_true', default=False)
         self.parser.add_argument('-d', '--debug', help='Show debugging details',
                                  action='store_true', default=False)
         self.parser.add_argument('--dry_run', help='Show file moves but leave music files unchanged',
                                  action='store_true', default=True)
-        
 
         self.parser.description = """ Fix Music File looks for music files in the infolder and transfers them
          to the outfolder. Each file is located in the Music Hierarchy. Music / Artist / Album / Title according
@@ -71,7 +69,7 @@ class CmdFix:
         self.album = pa.album
         self.debug = pa.debug
         self.verbose = pa.verbose
-        self.dry_run =pa.dry_run
+        self.dry_run = pa.dry_run
         if DEBUG:
             #
             # check parsed args
@@ -83,17 +81,15 @@ class CmdFix:
     def run(self):
         try:
             fixer = FixMusicFile(self.infolder, self.outfolder, artist=self.artist,
-                                           title=self.title, album=self.album)
-            #fixer.run()
+                                 title=self.title, album=self.album)
+            # fixer.run()
         except Exception as e:
             logging.error(f"Fixer failed. Reason: {e}")
-
-    
 
 
 def main():
     c = CmdFix(argparse.ArgumentParser())
-    Full_Log("CmdFix", debug=DEBUG, verbose=c.verbose)
+    Full_Log("FixMusicFile", debug=DEBUG, verbose=c.verbose)
     c.parse()
     c.run()
 

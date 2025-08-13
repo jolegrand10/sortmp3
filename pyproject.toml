@@ -1,0 +1,36 @@
+[project]
+name = "SortMP3"
+version = "0.1.0"
+description = "Fix Music Files"
+dependencies = [
+    "mutagen>=1.47"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.0",
+    "black>=24.0",
+    "mypy>=1.5"
+]
+
+[tool.ruff]
+src = ["src"]
+exclude = ["tests"]
+select = ["E", "F", "W", "C", "N"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
