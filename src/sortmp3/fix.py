@@ -11,12 +11,13 @@ import re
 import shutil
 
 
-
 class FixMusicFile():
 
     ITEMS = "artist album title".split()
 
-    def __init__(self, infolder='.', outfolder='.', artist="Tag", album="Tag", title="Tag", dry_run=True):
+    def __init__(self, infolder='.', outfolder='.', errfolder=None,
+                 artist="Tag", album="Tag", title="Tag",
+                 dry_run=True, overwrite=False):
 
         # a bunch of files and folders among them music files in mp3 or m4a format
         self.infolder = infolder
@@ -24,18 +25,22 @@ class FixMusicFile():
         # a place where the Music Hierarchy lives
         self.outfolder = outfolder
 
-        # priority to file info or tag info
-        self.priority={}
-        self.priority["artist"]=artist
-        self.priority["album"]=album
-        self.priority["title"]=title
+        # a place to store files that are rejected for some reason
+        self.errfolder = infolder if errfolder is None else errfolder
 
-        self.dry_run=dry_run
+        # priority to file info or tag info
+        self.priority = {}
+        self.priority["artist"] = artist
+        self.priority["album"] = album
+        self.priority["title"] = title
+
+        self.dry_run = dry_run
+        self.overwrite = overwrite
 
     def __repr__(self):
         attrs = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
         return f"{self.__class__.__name__}({attrs})"
-    
+
     def run(self):
         """ 
             Music Tags are modified depending on available info and priority
@@ -46,7 +51,7 @@ class FixMusicFile():
 
             Filenames reflect Music Tags when file is put in its place in the Music Hierarchy
             with Artist - Title.mp3 or m4a syntax
-        
+
         """
         def sanitize(s):
             """ Replaces illegal (windows, POSIX) chars in filenames with _"""
@@ -69,20 +74,21 @@ class FixMusicFile():
                 #
                 # collect info from file system
                 #
-                fil_={}
+                fil_ = {}
                 fil_["artist"] = match.group(1).strip().title()
                 fil_["title"] = match.group(2).strip().title()
-                #filtyp = match.group(3).strip().lower()
+                # filtyp = match.group(3).strip().lower()
                 # get last folder and beware of trailing slashes
                 fil_["album"] = os.path.basename(os.path.normpath(root))
                 if initial_folder_name == fil_["album"]:
-                    fil_["album"]=""
+                    fil_["album"] = ""
                 temp = " * ".join([fil_[it] for it in FixMusicFile.ITEMS])
                 logging.debug(f"File info: {temp}")
                 #
                 # collect info from tags
                 #
-                audiofile = File(filepath, easy=True)  # easy=True for a unified dict-like interface
+                # easy=True for a unified dict-like interface
+                audiofile = File(filepath, easy=True)
                 if audiofile is None:
                     raise ValueError(f"Unsupported file type: {filepath}")
                 # Some tags may be missing, so we use .get(key, [""])[0]
@@ -96,28 +102,35 @@ class FixMusicFile():
                 #
                 # album
                 #
-                if self.priority["album"]=="File":
-                    audiofile["album"]=fil_["album"] or tag_["album"] or "Single"
+                if self.priority["album"] == "File":
+                    audiofile["album"] = fil_[
+                        "album"] or tag_["album"] or "Single"
                 else:
-                    audiofile["album"]=tag_["album"] or fil_["album"] or "Single"
+                    audiofile["album"] = tag_[
+                        "album"] or fil_["album"] or "Single"
                 #
                 # artist
                 #
-                if self.priority["artist"]=="File":
-                    audiofile["artist"]=fil_["artist"] or tag_["artist"] or "Unknown artist"
+                if self.priority["artist"] == "File":
+                    audiofile["artist"] = fil_["artist"] or tag_[
+                        "artist"] or "Unknown artist"
                 else:
-                    audiofile["artist"]=tag_["artist"] or fil_["artist"] or "Unknown artist" 
+                    audiofile["artist"] = tag_["artist"] or fil_[
+                        "artist"] or "Unknown artist"
                 #
                 # title
                 #
-                if self.priority["title"]=="File":
-                    audiofile["title"]=fil_["title"] or tag_["title"] or "Unknown title" 
+                if self.priority["title"] == "File":
+                    audiofile["title"] = fil_["title"] or tag_[
+                        "title"] or "Unknown title"
                 else:
-                    audiofile["title"]=tag_["title"] or fil_["title"] or "Unknown title"                  
+                    audiofile["title"] = tag_["title"] or fil_[
+                        "title"] or "Unknown title"
                 #
                 # Note that Tags are modified inplace before file is moved
                 #
-                temp = " * ".join([audiofile.get(it, ["***"])[0] for it in FixMusicFile.ITEMS])
+                temp = " * ".join([audiofile.get(it, ["***"])[0]
+                                  for it in FixMusicFile.ITEMS])
                 logging.debug(f"Modified tags: {temp}")
                 if not self.dry_run:
                     audiofile.save()
@@ -127,7 +140,8 @@ class FixMusicFile():
                 logging.debug(f'{self.outfolder=}')
                 logging.debug(f'{audiofile["artist"]=}')
                 logging.debug(f'{audiofile["album"]=}')
-                target_dir = os.path.join(self.outfolder, "Music", sanitize(audiofile["artist"][0]), sanitize(audiofile["album"][0]))
+                target_dir = os.path.join(self.outfolder, "Music", sanitize(
+                    audiofile["artist"][0]), sanitize(audiofile["album"][0]))
                 try:
                     os.makedirs(target_dir, exist_ok=True)
                 except OSError as e:
@@ -139,16 +153,14 @@ class FixMusicFile():
                 print(target_file)
                 #
                 # move mp3 file to its final place
-                # 
+                #
                 if not self.dry_run:
-                    if os.path.exists(target_file) and os.path.isfile(target_file):
+                    if os.path.exists(target_file) and os.path.isfile(target_file) and not self.overwrite:
                         logging.warning(f"Duplicate ignored: {target_file}")
                     else:
-                        shutil.move(filepath, target_file) 
+                        shutil.move(filepath, target_file)
         logging.info(f"Files processed: {n}")
         return n
-    
-
 
 
 def main():
@@ -159,7 +171,7 @@ def main():
     logging.info(f"FixMusicFile")
     logging.info(f"Input folder: {infolder}")
     logging.info(f"Output folder: {outfolder}")
-    app = FixMusicFile(infolder, outfolder,dry_run=True)
+    app = FixMusicFile(infolder, outfolder, dry_run=True)
     logging.info(repr(app))
     app.run()
 

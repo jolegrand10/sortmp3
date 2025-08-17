@@ -6,8 +6,10 @@ from sortmp3.fix import FixMusicFile
 
 DEBUG = True
 
+
 class CmdFix:
     """ a command to run FixMusicFile from the  """
+
     def __init__(self, p):
         """ p is the parser, provided at init time to facilitate unit testing"""
         self.parser = p
@@ -54,6 +56,8 @@ class CmdFix:
                                  action='store_true', default=False)
         self.parser.add_argument('--dry_run', help='Show file moves but leave music files unchanged',
                                  action='store_true', default=True)
+        self.parser.add_argument('--overwrite', help='Duplicates overwrite existing files',
+                                 action='store_true', default=False)
 
         self.parser.description = """ Fix Music File looks for music files in the infolder and transfers them
          to the outfolder. Each file is located in the Music Hierarchy. Music / Artist / Album / Title according
@@ -70,6 +74,7 @@ class CmdFix:
         self.debug = pa.debug
         self.verbose = pa.verbose
         self.dry_run = pa.dry_run
+        self.overwrite = pa.overwrite
         if DEBUG:
             #
             # check parsed args

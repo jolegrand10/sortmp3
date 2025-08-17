@@ -151,7 +151,8 @@ def test_1_file_no_tags_with_album(tmp_path):
     assert audiofile.get("title", [""])[0] == "Penny Lane"
     assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
 
-def test_collisions(tmp_path):
+
+def test_collisions_no_overwrite(tmp_path):
     """ infolder/subfolder1/album_a/artist_a - title_a.mp3
     and
         infolder/subfolder2/album_a/artist_a - title_a.mp3
@@ -186,7 +187,7 @@ def test_collisions(tmp_path):
     #
     # run 
     #
-    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False)
+    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False, overwrite=False)
     r = fmf.run()
     #
     # check 2 files have been processed
@@ -206,6 +207,64 @@ def test_collisions(tmp_path):
     # 1 of the 2 but not the 2 together
     #
     assert (bool(Path(albumf1 / "The Beatles - Penny Lane.mp3").exists())^ 
+        bool(Path(albumf2 / "The Beatles - Penny Lane.mp3").exists()))
+
+
+def test_collisions_with_overwrite(tmp_path):
+    """ infolder/subfolder1/album_a/artist_a - title_a.mp3
+    and
+        infolder/subfolder2/album_a/artist_a - title_a.mp3
+        
+    creates the condition for a collision in Music Hierarchy"""
+    #
+    # create temp folders for infolder and outfolder
+    #    
+    inf = tmp_path / "in"
+    inf.mkdir()
+    outf = tmp_path / "out" 
+    outf.mkdir()
+    subfolder1 = inf / "Subfolder1"
+    subfolder1.mkdir()
+    albumf1 = subfolder1 / "Magical Mystery Tour"
+    albumf1.mkdir()
+    #
+    # create an MP3 file in inf folder wiht no tags
+    #
+    mk_mp3(albumf1 / "The Beatles - Penny Lane.mp3")
+    #
+    # create duplicate
+    #
+    subfolder2 = inf / "Subfolder2"
+    subfolder2.mkdir()
+    albumf2 = subfolder2 / "Magical Mystery Tour"
+    albumf2.mkdir()
+    #
+    # create an MP3 file in inf folder wiht no tags
+    #
+    mk_mp3(albumf2 / "The Beatles - Penny Lane.mp3")
+    #
+    # run 
+    #
+    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False, overwrite=True)
+    r = fmf.run()
+    #
+    # check 2 files have been processed
+    #
+    assert r==2
+    #
+    # check Music hierarchy contains the mp3 file
+    #
+    fo = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Penny Lane.mp3"
+    assert Path(outf / "Music").exists()
+    assert Path(outf / "Music/The Beatles").exists()
+    assert Path(outf / "Music/The Beatles/Magical Mystery Tour").exists()
+    assert fo.exists()
+    assert fo.is_file()
+    #
+    # check that duplicate is no longer in infolder
+    # 
+    #
+    assert not (bool(Path(albumf1 / "The Beatles - Penny Lane.mp3").exists()) and not
         bool(Path(albumf2 / "The Beatles - Penny Lane.mp3").exists()))
 
     

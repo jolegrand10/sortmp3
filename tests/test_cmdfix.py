@@ -39,3 +39,4 @@ def test_default(monkeypatch):
     assert cf.debug == False
     assert cf.verbose == False
     assert cf.dry_run == True
+    assert cf.overwrite == False
