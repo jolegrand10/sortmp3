@@ -40,7 +40,7 @@ class FixMusicFile():
         """ 
             Music Tags are modified depending on available info and priority
 
-            File   \ Tag    Absent  Present 
+            File / Tag    Absent  Present 
             Absent          ...     ...         File info is always present
             Present         File    Priority
 
@@ -141,7 +141,10 @@ class FixMusicFile():
                 # move mp3 file to its final place
                 # 
                 if not self.dry_run:
-                    shutil.move(filepath, target_file) 
+                    if os.path.exists(target_file) and os.path.isfile(target_file):
+                        logging.warning(f"Duplicate ignored: {target_file}")
+                    else:
+                        shutil.move(filepath, target_file) 
         logging.info(f"Files processed: {n}")
         return n
     
