@@ -143,6 +143,7 @@ class FixMusicFile():
                 if not self.dry_run:
                     shutil.move(filepath, target_file) 
         logging.info(f"Files processed: {n}")
+        return n
     
 
 

@@ -1,14 +1,14 @@
 # SortMP3 #
 
-This is a Python script based on Mutagen to sort and store MP3 and M4A music files
+This is a Python script based on Mutagen to sort and store MP3 and M4A music files : it moves files, updates consistently names and tags to fit them in a Music Hierarchy based on Artist-Album-Title. 
 
 # Usage
 ```
 usage: cmdfix.py [-h] [-i INFOLDER] [-o OUTFOLDER] [--artist ARTIST] [--album ALBUM] [--title TITLE] [-v] [-d] [--dry_run]
 
 Fix Music File looks for music files in the infolder and transfers them to the outfolder. Each file is located in the Music
-Hierarchy. Music / Artist / Album / Title according to its TAGs. Missing tags are adjusted with information found in filenames.     
-Priority is given to Tag or File to settle conflicting info for artist, title, album.
+Hierarchy, i.e. Music / Artist / Album / Title,  according to its TAGs. Missing tags are adjusted with information found in filenames.     
+Priority is given either to Tag or File information to settle conflicts for items such as artist, title or album.
 
 options:
   -h, --help            show this help message and exit
@@ -97,6 +97,10 @@ Should any of those pieces of information be missing, it will be replaced by inf
 Artist will be supplied by the folder name.
 Title will be extracted from the file name.
 
+## Information logging
+
+A log file is produced. Messages are directed both to standard output and to a file. The log file is limited in size (100k) and 3 versions are used with rotating log file policy.
+
 # Software
 
 ## cmdfix.py
@@ -106,8 +110,9 @@ Args such as verbose and debug drive the behavior of the logging facility.
 ## fix.py
 This is the home of the FixMusicFile class.
 
-
 # Tests
+
+Pytest is used. 
 
 
 # TODOs
@@ -115,5 +120,6 @@ This is the home of the FixMusicFile class.
 - Use absolute paths for in- out- folders : os.path.abspath('.'))
 - Provide a defaut for absent title
 - Process track numbers or Album names in the filename 
+- Test name sanitization
 
 

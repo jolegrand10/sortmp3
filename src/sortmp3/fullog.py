@@ -38,6 +38,6 @@ class Full_Log:
         else:
             stream_handler.setLevel(logging.WARNING)
         if debug:
-            stream_handler.setLevel(logging.DEBUG)
+                stream_handler.setLevel(logging.DEBUG)
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)

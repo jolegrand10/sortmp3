@@ -1,4 +1,4 @@
-""" test_cmdfix.py - Test de cmdfix.py """
+""" test_cmdfix.py - Test for cmdfix.py """
 import argparse
 from sortmp3.cmdfix import CmdFix
 import sys
@@ -23,7 +23,7 @@ def test_valid_priority(monkeypatch):
     assert cf.artist == "File"
 
 
-def test_defaut(monkeypatch):
+def test_default(monkeypatch):
     """ Test the CmdFix command without any arg
      to check that defaults are those expected """
     test_args = ["cmdfix.py"]
