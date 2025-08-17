@@ -269,10 +269,62 @@ def test_collisions_with_overwrite(tmp_path):
 
     
 
-def test_single_file(monkeypatch):
-    """ Test the Fix class with a single music file and  tags"""
-    pass
-
-def test_album(monkeypatch):
-    """ Test the Fix class with a single music file and no tags"""
-    pass
+def test_album(tmp_path):
+    """ Test the Fix class with an album and several titles """
+    #
+    # create temp folders for infolder and outfolder
+    #    
+    inf = tmp_path / "in"
+    inf.mkdir()
+    outf = tmp_path / "out" 
+    outf.mkdir()
+    albumf = inf / "Magical Mystery Tour"
+    albumf.mkdir()
+    #
+    # create several MP3 files in album folder wiht no tags
+    #
+    mk_mp3(albumf / "The Beatles - Penny Lane.mp3")
+    mk_mp3(albumf / "The Beatles - Hello, Goodbye.mp3")
+    mk_mp3(albumf / "The Beatles - Strawberry Fields Forever.mp3")
+    #
+    # run 
+    #
+    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False, overwrite=True)
+    r = fmf.run()
+    #
+    # check 3 files have been processed
+    #
+    assert r==3
+    #
+    # check the output - file existence
+    #
+    fo1 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Penny Lane.mp3"
+    assert fo1.exists()
+    assert fo1.is_file()
+    fo2 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Hello, Goodbye.mp3"
+    assert fo2.exists()
+    assert fo2.is_file()
+    fo3 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Strawberry Fields Forever.mp3"
+    assert fo3.exists()
+    assert fo3.is_file()
+    #
+    # Tag consistency
+    #
+    audiofile = File(fo1, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Penny Lane"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fo2, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Hello, Goodbye"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fo3, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Strawberry Fields Forever"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    #
+    # check the input folder
+    # TODO Clean Empty Folders
