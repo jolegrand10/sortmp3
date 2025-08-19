@@ -5,10 +5,34 @@
 
 import sys
 import os
+from pathlib import Path
 import logging
 from mutagen import File
 import re
 import shutil
+
+
+def dir_empty(dir_path):
+    """ the fastest way to check if dir_path is empty """
+    return not next(os.scandir(dir_path), None)
+
+
+def dir_empty(dir_path):
+    """ pathlib version """
+    return dir_path.is_dir() and not any(dir_path.iterdir())
+
+
+def clean_dirs(root):
+    """ browse the file hierarchy starting from root, depth first,
+        to remove empty folders starting from the leaves and ending at the root.
+    """
+    p = 0
+    for d in sorted(root.rglob("*"), reverse=True):
+        if d.is_dir() and not any(d.iterdir()):
+            d.rmdir()
+            p += 1
+    return p
+
 
 
 class FixMusicFile():
@@ -20,13 +44,14 @@ class FixMusicFile():
                  dry_run=True, overwrite=False):
 
         # a bunch of files and folders among them music files in mp3 or m4a format
-        self.infolder = infolder
+        self.infolder = Path(infolder).expanduser().resolve()
 
         # a place where the Music Hierarchy lives
-        self.outfolder = outfolder
+        self.outfolder = Path(outfolder).expanduser().resolve()
 
         # a place to store files that are rejected for some reason
-        self.errfolder = infolder if errfolder is None else errfolder
+        self.errfolder = infolder if errfolder is None else Path(
+            errfolder).expanduser().resolve()
 
         # priority to file info or tag info
         self.priority = {}
@@ -59,17 +84,16 @@ class FixMusicFile():
 
         n = 0
         logging.info(f"Starting exploring music files in {self.infolder}")
-        initial_folder_name = os.path.basename(os.path.normpath(self.infolder))
+        initial_folder_name = self.infolder.name
         logging.debug(f"{initial_folder_name=}")
-        for root, _, files in os.walk(self.infolder):
-            for file in files:
-                filepath = os.path.join(root, file)
-                filename = os.path.basename(filepath)
+        for file in self.infolder.rglob("*"):
+            if file.is_file():
                 # Strict regex: artist space hyphen space title.mp3 or m4a
-                match = re.match(r'^(.+?) - (.+?)\.(mp3|m4a)$', filename)
+                match = re.match(r'^(.+?) - (.+?)\.(mp3|m4a)$', file.name)
                 if not match:
                     continue
-                logging.debug(f"Processing {filepath}")
+                print(f"Processing {file}")
+                logging.debug(f"Processing {file}")
                 n += 1
                 #
                 # collect info from file system
@@ -77,9 +101,9 @@ class FixMusicFile():
                 fil_ = {}
                 fil_["artist"] = match.group(1).strip().title()
                 fil_["title"] = match.group(2).strip().title()
-                # filtyp = match.group(3).strip().lower()
+                filtyp = match.group(3).strip().lower()
                 # get last folder and beware of trailing slashes
-                fil_["album"] = os.path.basename(os.path.normpath(root))
+                fil_["album"] = file.parent.name
                 if initial_folder_name == fil_["album"]:
                     fil_["album"] = ""
                 temp = " * ".join([fil_[it] for it in FixMusicFile.ITEMS])
@@ -88,9 +112,9 @@ class FixMusicFile():
                 # collect info from tags
                 #
                 # easy=True for a unified dict-like interface
-                audiofile = File(filepath, easy=True)
+                audiofile = File(file, easy=True)
                 if audiofile is None:
-                    raise ValueError(f"Unsupported file type: {filepath}")
+                    raise ValueError(f"Unsupported file type: {file}")
                 # Some tags may be missing, so we use .get(key, [""])[0]
                 tag_ = {}
                 for it in FixMusicFile.ITEMS:
@@ -130,7 +154,7 @@ class FixMusicFile():
                 # Note that Tags are modified inplace before file is moved
                 #
                 temp = " * ".join([audiofile.get(it, ["***"])[0]
-                                  for it in FixMusicFile.ITEMS])
+                                   for it in FixMusicFile.ITEMS])
                 logging.debug(f"Modified tags: {temp}")
                 if not self.dry_run:
                     audiofile.save()
@@ -140,26 +164,35 @@ class FixMusicFile():
                 logging.debug(f'{self.outfolder=}')
                 logging.debug(f'{audiofile["artist"]=}')
                 logging.debug(f'{audiofile["album"]=}')
-                target_dir = os.path.join(self.outfolder, "Music", sanitize(
+                #
+                target_dir = Path(self.outfolder, "Music", sanitize(
                     audiofile["artist"][0]), sanitize(audiofile["album"][0]))
                 try:
-                    os.makedirs(target_dir, exist_ok=True)
+                    target_dir.mkdir(parents=True, exist_ok=True)
                 except OSError as e:
                     logging.error(f"Cannot create folder path {target_dir=}")
                     logging.error(f"Cause: {e}")
                     continue
-                target_file = os.path.join(target_dir, sanitize(filename))
+                #
+                # create filename
+                #
+                filename = audiofile["artist"][0] + " - " + \
+                    audiofile["title"][0] + "." + filtyp
+                target_file = target_dir / sanitize(filename)
                 logging.info(f"Moving to {target_file=}")
                 print(target_file)
                 #
                 # move mp3 file to its final place
                 #
                 if not self.dry_run:
-                    if os.path.exists(target_file) and os.path.isfile(target_file) and not self.overwrite:
+                    if target_file.exists() and target_file.is_file() and not self.overwrite:
                         logging.warning(f"Duplicate ignored: {target_file}")
                     else:
-                        shutil.move(filepath, target_file)
+                        shutil.move(file, target_file)
+        p = 0 if self.dry_run else clean_dirs(self.infolder)
         logging.info(f"Files processed: {n}")
+        if p:
+            logging.info(f"Folders cleaned: {p}")
         return n
 
 

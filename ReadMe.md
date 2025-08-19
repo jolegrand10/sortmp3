@@ -103,6 +103,10 @@ A log file is produced. Messages are directed both to standard output and to a f
 
 # Software
 
+## Style
+
+`pathlib` is preferred to `os`.
+
 ## cmdfix.py
 Provides the CLI interface. Collects the args from the command line and passes them to the fix.py script.
 Args such as verbose and debug drive the behavior of the logging facility.

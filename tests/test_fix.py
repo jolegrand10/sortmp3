@@ -1,6 +1,6 @@
 """ test_fix.py - Test for fix.py """
 import argparse
-from sortmp3.fix import FixMusicFile
+from sortmp3.fix import FixMusicFile, dir_empty, clean_dirs
 import sys
 import pytest
 from mutagen.id3 import ID3, TIT2, TPE1, TALB, TCON
@@ -10,23 +10,53 @@ from mutagen import File
 from pathlib import Path
 import shutil
 
+
+def test_dir_empty(tmp_path):
+    #
+    # make an empty dir
+    #
+    f = tmp_path
+    assert dir_empty(f)
+
+def test_clean_dirs(tmp_path):
+    #
+    # create infolder
+    #
+    infolder = tmp_path
+    #
+    # create a long dir branch inside
+    #
+    sf = infolder
+    for i in range(3):
+        sf = sf / ("a"+str(i))
+        sf.mkdir()
+    #
+    # check  emptyness before cleaning
+    #
+    assert dir_empty(sf)
+    p=clean_dirs(infolder)
+    assert dir_empty(infolder)
+    assert p==3
+
+
+
 def mk_m4a(filepath, artist="", album="", title="", genre=""):
     """Make an M4A file with no audio """
 
-    # 1. Copy sample.m4a to path
+    # Copy sample.m4a to path
     shutil.copy("tests/sample.m4a", filepath)
     
 
-    # 2. Load it with Mutagen
+    # Load it with Mutagen
     audio = MP4(filepath)
 
-    # 3. Add empty tags (all strings set to "")
+    # Add empty tags (all strings set to "")
     audio["\xa9nam"] = [title]  # Title
     audio["\xa9ART"] = [artist]  # Artist
     audio["\xa9alb"] = [album]  # Album
     audio["\xa9gen"] = [genre]  # Genre
 
-    # 4. Save the file back with empty metadata
+    # Save the file back with empty metadata
     audio.save()
 
 
@@ -57,9 +87,9 @@ def test_empty_infolder(tmp_path):
     # create temp folders for infolder and outfolder
     #    
     inf = tmp_path / "in"
-    inf.mkdir()
+    inf.mkdir(parents=True, exist_ok=True)
     outf = tmp_path / "out"
-    outf.mkdir()
+    outf.mkdir(parents=True, exist_ok=True)
     f=FixMusicFile(infolder=inf, outfolder=outf)
     r = f.run()
     assert r==0
@@ -72,17 +102,21 @@ def test_1_file_no_tags_no_album(tmp_path):
     # create temp folders for infolder and outfolder
     #    
     inf = tmp_path / "in"
-    inf.mkdir()
+    inf.mkdir(parents=True, exist_ok=True)
+    assert inf.exists() and inf.is_dir()
     outf = tmp_path / "out"
-    outf.mkdir()
+    outf.mkdir(parents=True, exist_ok=True)
+    assert outf.exists() and outf.is_dir()
     #
     # create an MP3 file in inf folder wiht no tags
     #
     mk_mp3(inf / "The Beatles - Penny Lane.mp3")
+    assert (inf / "The Beatles - Penny Lane.mp3").exists()
     #
     # run 
     #
-    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False)
+    fmf = FixMusicFile(infolder=inf, outfolder=outf, dry_run=False)
+    print(repr(fmf))
     r = fmf.run()
     #
     # check 1 file has been processed
@@ -327,4 +361,5 @@ def test_album(tmp_path):
     assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
     #
     # check the input folder
-    # TODO Clean Empty Folders
+    # is it empty
+
