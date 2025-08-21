@@ -560,3 +560,106 @@ def test_update_flat_folder(tmp_path):
     assert not fi1.exists()
     assert not fi2.exists()
     assert not fi3.exists()
+
+def test_inplace(tmp_path):
+    """ given a folder with a music hierarchy as the input folder and the same folder as output
+        check that the files are moved/renames according to their tags """
+    #
+    # Create music hierarchy in the infolder
+    #
+    inf = tmp_path / "in"
+    inf.mkdir()
+    music = inf / "Music"
+    music.mkdir()
+    folder1 = music / "beatles"
+    folder1.mkdir()
+    folder2 = music/ "the beatles"
+    folder2.mkdir()
+    folder21 = folder2 / "2xwhite"
+    folder21.mkdir()
+    #
+    #
+    #
+    #
+    # create several MP3 files in album folder title no tags
+    #
+    mk_mp3(folder1 / "A - Penny.mp3", title="Penny Lane", artist="The Beatles", album="Magical Mystery Tour")
+    mk_mp3(folder21 / "B - Hello.mp3", title="Hello, Goodbye", artist="The Beatles", album="Magical Mystery Tour")
+    mk_mp3(folder21 / "C - Strawberry.mp3", title="Strawberry Fields Forever", artist="The Beatles", album="Magical Mystery Tour")
+    #
+    # Check input folder
+    #
+    fi1 = folder1 / "A - Penny.mp3"
+    assert fi1.exists()
+    assert fi1.is_file()
+    fi2 = folder21 / "B - Hello.mp3"
+    assert fi2.exists()
+    assert fi2.is_file()
+    fi3 = folder21 / "C - Strawberry.mp3"
+    assert fi3.exists()
+    assert fi3.is_file()
+    #
+    # Tag consistency
+    #
+    audiofile = File(fi1, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Penny Lane"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fi2, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Hello, Goodbye"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fi3, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Strawberry Fields Forever"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    #
+    # attempt to restructure Music Hierarchy in place
+    # 
+    outf = inf
+    fmf=FixMusicFile(infolder=inf, outfolder=outf, dry_run=False, overwrite=True)
+    r = fmf.run()
+    #
+    #
+    # check 3 files have been processed
+    #
+    #assert r==3
+    #
+    # check the output - file existence
+    #
+    fo1 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Penny Lane.mp3"
+    assert fo1.exists()
+    assert fo1.is_file()
+    fo2 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Hello, Goodbye.mp3"
+    assert fo2.exists()
+    assert fo2.is_file()
+    fo3 = outf / "Music/The Beatles/Magical Mystery Tour/The Beatles - Strawberry Fields Forever.mp3"
+    assert fo3.exists()
+    assert fo3.is_file()
+    #
+    # Tag consistency
+    #
+    audiofile = File(fo1, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Penny Lane"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fo2, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Hello, Goodbye"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    audiofile = File(fo3, easy=True)  # easy=True for a unified dict-like interface
+    assert audiofile is not None
+    assert audiofile.get("artist", [""])[0] == "The Beatles"
+    assert audiofile.get("title", [""])[0] == "Strawberry Fields Forever"
+    assert audiofile.get("album", [""])[0] == "Magical Mystery Tour"
+    #
+    # check the input folder
+    # 
+    assert not fi1.exists()
+    assert not fi2.exists()
+    assert not fi3.exists()

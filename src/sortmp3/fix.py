@@ -86,107 +86,114 @@ class FixMusicFile():
         logging.info(f"Starting exploring music files in {self.infolder}")
         initial_folder_name = self.infolder.name
         logging.debug(f"{initial_folder_name=}")
-        for file in self.infolder.rglob("*"):
-            if file.is_file():
-                # Strict regex: artist space hyphen space title.mp3 or m4a
-                match = re.match(r'^(.+?) - (.+?)\.(mp3|m4a)$', file.name)
-                if not match:
-                    continue
-                logging.debug(f"Processing {file.name}")
-                n += 1
-                #
-                # collect info from file system
-                #
-                fil_ = {}
-                fil_["artist"] = match.group(1).strip().title()
-                fil_["title"] = match.group(2).strip().title()
-                filtyp = match.group(3).strip().lower()
-                # get last folder and beware of trailing slashes
-                fil_["album"] = file.parent.name
-                if initial_folder_name == fil_["album"]:
-                    fil_["album"] = ""
-                temp = " * ".join([fil_[it] for it in FixMusicFile.ITEMS])
-                logging.debug(f"File info: {temp}")
-                #
-                # collect info from tags
-                #
-                # easy=True for a unified dict-like interface
-                audiofile = File(file, easy=True)
-                if audiofile is None:
-                    raise ValueError(f"Unsupported file type: {file}")
-                # Some tags may be missing, so we use .get(key, [""])[0]
-                tag_ = {}
-                for it in FixMusicFile.ITEMS:
-                    tag_[it] = sanitize(audiofile.get(it, [""])[0])
-                temp = " * ".join([tag_[it] for it in FixMusicFile.ITEMS])
-                logging.debug(f"Original tags: {temp}")
-                #
-                # merge fil and tag info into new tags consistently with priorities
-                #
-                # album
-                #
-                if self.priority["album"] == "File":
-                    audiofile["album"] = fil_[
-                        "album"] or tag_["album"] or "Single"
+        #
+        # To allow inplace processing when infolder and outfolder are the same
+        #
+        files  = list(self.infolder.rglob("*"))
+        #
+        # retain files only
+        #
+        files = [f for f in files if f.is_file()]
+        for file in files:
+            # Strict regex: artist space hyphen space title.mp3 or m4a
+            match = re.match(r'^(.+?) - (.+?)\.(mp3|m4a)$', file.name)
+            if not match:
+                continue
+            logging.debug(f"Processing {file.name}")
+            n += 1
+            #
+            # collect info from file system
+            #
+            fil_ = {}
+            fil_["artist"] = match.group(1).strip().title()
+            fil_["title"] = match.group(2).strip().title()
+            filtyp = match.group(3).strip().lower()
+            # get last folder and beware of trailing slashes
+            fil_["album"] = file.parent.name
+            if initial_folder_name == fil_["album"]:
+                fil_["album"] = ""
+            temp = " * ".join([fil_[it] for it in FixMusicFile.ITEMS])
+            logging.debug(f"File info: {temp}")
+            #
+            # collect info from tags
+            #
+            # easy=True for a unified dict-like interface
+            audiofile = File(file, easy=True)
+            if audiofile is None:
+                raise ValueError(f"Unsupported file type: {file}")
+            # Some tags may be missing, so we use .get(key, [""])[0]
+            tag_ = {}
+            for it in FixMusicFile.ITEMS:
+                tag_[it] = sanitize(audiofile.get(it, [""])[0])
+            temp = " * ".join([tag_[it] for it in FixMusicFile.ITEMS])
+            logging.debug(f"Original tags: {temp}")
+            #
+            # merge fil and tag info into new tags consistently with priorities
+            #
+            # album
+            #
+            if self.priority["album"] == "File":
+                audiofile["album"] = fil_[
+                    "album"] or tag_["album"] or "Single"
+            else:
+                audiofile["album"] = tag_[
+                    "album"] or fil_["album"] or "Single"
+            #
+            # artist
+            #
+            if self.priority["artist"] == "File":
+                audiofile["artist"] = fil_["artist"] or tag_[
+                    "artist"] or "Unknown artist"
+            else:
+                audiofile["artist"] = tag_["artist"] or fil_[
+                    "artist"] or "Unknown artist"
+            #
+            # title
+            #
+            if self.priority["title"] == "File":
+                audiofile["title"] = fil_["title"] or tag_[
+                    "title"] or "Unknown title"
+            else:
+                audiofile["title"] = tag_["title"] or fil_[
+                    "title"] or "Unknown title"
+            #
+            # Note that Tags are modified inplace before file is moved
+            #
+            temp = " * ".join([audiofile.get(it, ["***"])[0]
+                                for it in FixMusicFile.ITEMS])
+            logging.debug(f"Modified tags: {temp}")
+            if not self.dry_run:
+                audiofile.save()
+            #
+            # create folder path
+            #
+            logging.debug(f'{self.outfolder=}')
+            logging.debug(f'{audiofile["artist"]=}')
+            logging.debug(f'{audiofile["album"]=}')
+            #
+            target_dir = Path(self.outfolder, "Music", sanitize(
+                audiofile["artist"][0]), sanitize(audiofile["album"][0]))
+            try:
+                target_dir.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                logging.error(f"Cannot create folder path {target_dir=}")
+                logging.error(f"Cause: {e}")
+                continue
+            #
+            # create filename
+            #
+            filename = audiofile["artist"][0] + " - " + \
+                audiofile["title"][0] + "." + filtyp
+            target_file = target_dir / sanitize(filename)
+            logging.info(f"Moving to {target_file.name}")
+            #
+            # move mp3 file to its final place
+            #
+            if not self.dry_run:
+                if target_file.exists() and target_file.is_file() and not self.overwrite:
+                    logging.warning(f"Duplicate ignored: {target_file.name}")
                 else:
-                    audiofile["album"] = tag_[
-                        "album"] or fil_["album"] or "Single"
-                #
-                # artist
-                #
-                if self.priority["artist"] == "File":
-                    audiofile["artist"] = fil_["artist"] or tag_[
-                        "artist"] or "Unknown artist"
-                else:
-                    audiofile["artist"] = tag_["artist"] or fil_[
-                        "artist"] or "Unknown artist"
-                #
-                # title
-                #
-                if self.priority["title"] == "File":
-                    audiofile["title"] = fil_["title"] or tag_[
-                        "title"] or "Unknown title"
-                else:
-                    audiofile["title"] = tag_["title"] or fil_[
-                        "title"] or "Unknown title"
-                #
-                # Note that Tags are modified inplace before file is moved
-                #
-                temp = " * ".join([audiofile.get(it, ["***"])[0]
-                                   for it in FixMusicFile.ITEMS])
-                logging.debug(f"Modified tags: {temp}")
-                if not self.dry_run:
-                    audiofile.save()
-                #
-                # create folder path
-                #
-                logging.debug(f'{self.outfolder=}')
-                logging.debug(f'{audiofile["artist"]=}')
-                logging.debug(f'{audiofile["album"]=}')
-                #
-                target_dir = Path(self.outfolder, "Music", sanitize(
-                    audiofile["artist"][0]), sanitize(audiofile["album"][0]))
-                try:
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                except OSError as e:
-                    logging.error(f"Cannot create folder path {target_dir=}")
-                    logging.error(f"Cause: {e}")
-                    continue
-                #
-                # create filename
-                #
-                filename = audiofile["artist"][0] + " - " + \
-                    audiofile["title"][0] + "." + filtyp
-                target_file = target_dir / sanitize(filename)
-                logging.info(f"Moving to {target_file.name}")
-                #
-                # move mp3 file to its final place
-                #
-                if not self.dry_run:
-                    if target_file.exists() and target_file.is_file() and not self.overwrite:
-                        logging.warning(f"Duplicate ignored: {target_file.name}")
-                    else:
-                        shutil.move(file, target_file)
+                    shutil.move(file, target_file)
         p = 0 if self.dry_run else clean_dirs(self.infolder)
         logging.info(f"Files processed: {n}")
         if p:
