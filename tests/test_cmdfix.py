@@ -36,7 +36,6 @@ def test_default(monkeypatch):
     assert cf.artist == "Tag"
     assert cf.album == "Tag"
     assert cf.title == "Tag"
-    assert cf.debug == False
-    assert cf.verbose == False
-    assert cf.dry_run == True
+    assert cf.log_level == "INFO"
+    assert cf.dry_run == False
     assert cf.overwrite == False

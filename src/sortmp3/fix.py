@@ -92,8 +92,7 @@ class FixMusicFile():
                 match = re.match(r'^(.+?) - (.+?)\.(mp3|m4a)$', file.name)
                 if not match:
                     continue
-                print(f"Processing {file}")
-                logging.debug(f"Processing {file}")
+                logging.debug(f"Processing {file.name}")
                 n += 1
                 #
                 # collect info from file system
@@ -179,14 +178,13 @@ class FixMusicFile():
                 filename = audiofile["artist"][0] + " - " + \
                     audiofile["title"][0] + "." + filtyp
                 target_file = target_dir / sanitize(filename)
-                logging.info(f"Moving to {target_file=}")
-                print(target_file)
+                logging.info(f"Moving to {target_file.name}")
                 #
                 # move mp3 file to its final place
                 #
                 if not self.dry_run:
                     if target_file.exists() and target_file.is_file() and not self.overwrite:
-                        logging.warning(f"Duplicate ignored: {target_file}")
+                        logging.warning(f"Duplicate ignored: {target_file.name}")
                     else:
                         shutil.move(file, target_file)
         p = 0 if self.dry_run else clean_dirs(self.infolder)

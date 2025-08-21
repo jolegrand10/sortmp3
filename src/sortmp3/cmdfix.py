@@ -50,14 +50,13 @@ class CmdFix:
         self.parser.add_argument('--title', help='Specify File or Tag',
                                  type=lambda x: self.is_valid_priority(x),
                                  default="Tag")
-        self.parser.add_argument('-v', '--verbose', help='Show info messages in log',
-                                 action='store_true', default=False)
-        self.parser.add_argument('-d', '--debug', help='Show debugging details',
-                                 action='store_true', default=False)
         self.parser.add_argument('--dry_run', help='Show file moves but leave music files unchanged',
-                                 action='store_true', default=True)
+                                 action='store_true', default=False)
         self.parser.add_argument('--overwrite', help='Duplicates overwrite existing files',
                                  action='store_true', default=False)
+        self.parser.add_argument("--log-level", default="INFO",
+                                 choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                                help="Log level, default is  'INFO'")
 
         self.parser.description = """ Fix Music File looks for music files in the infolder and transfers them
          to the outfolder. Each file is located in the Music Hierarchy. Music / Artist / Album / Title according
@@ -71,8 +70,7 @@ class CmdFix:
         self.artist = pa.artist
         self.title = pa.title
         self.album = pa.album
-        self.debug = pa.debug
-        self.verbose = pa.verbose
+        self.log_level = pa.log_level
         self.dry_run = pa.dry_run
         self.overwrite = pa.overwrite
         if DEBUG:
@@ -86,16 +84,17 @@ class CmdFix:
     def run(self):
         try:
             fixer = FixMusicFile(self.infolder, self.outfolder, artist=self.artist,
-                                 title=self.title, album=self.album)
-            # fixer.run()
+                                 title=self.title, album=self.album, dry_run=self.dry_run)
+            print(f"{self.dry_run=}")
+            fixer.run()
         except Exception as e:
             logging.error(f"Fixer failed. Reason: {e}")
 
 
-def main():
+def main():    
     c = CmdFix(argparse.ArgumentParser())
-    Full_Log("FixMusicFile", debug=DEBUG, verbose=c.verbose)
     c.parse()
+    Full_Log("FixMusicFile", level=c.log_level)
     c.run()
 
 

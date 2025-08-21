@@ -105,7 +105,7 @@ A log file is produced. Messages are directed both to standard output and to a f
 
 ## Style
 
-`pathlib` is preferred to `os`.
+`pathlib` is preferred to `os` for path operations
 
 ## cmdfix.py
 Provides the CLI interface. Collects the args from the command line and passes them to the fix.py script.
@@ -125,5 +125,6 @@ Pytest is used.
 - Provide a defaut for absent title
 - Process track numbers or Album names in the filename 
 - Test name sanitization
+- Add a --strict option defaulted to True to reject/accept music files that do not obey the artist-title.m... pattern
 
 
