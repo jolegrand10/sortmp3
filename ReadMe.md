@@ -127,4 +127,6 @@ Pytest is used.
 - Test name sanitization
 - Add a --strict option defaulted to True to reject/accept music files that do not obey the artist-title.m... pattern
 - Handle upper/lower case in file extensions mp3 m4a
+- add support for multiple space-like chars in names, filenames, dir names
+- save graphical jpg resources attached to albums
 
